@@ -21,6 +21,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Agents.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Kaggle_enviroments.py" />
     <Compile Include="RL_learning.py" />
     <Compile Include="tensorforce_test.py" />
