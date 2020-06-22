@@ -30,7 +30,6 @@ for _ in range(100):
     
     print(env.render(mode='ansi'))
 
-
     if done:
         obs = trainer.reset()
 

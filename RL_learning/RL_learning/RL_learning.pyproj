@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>070f8513-fd6d-479f-a51a-212ce08b2a03</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>RL_learning.py</StartupFile>
+    <StartupFile>Kaggle_enviroments.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -27,6 +27,9 @@
     <Compile Include="Kaggle_enviroments.py" />
     <Compile Include="RL_learning.py" />
     <Compile Include="tensorforce_test.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="requirements.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
