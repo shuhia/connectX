@@ -1,3 +1,6 @@
+import numpy as np
+import math
+import random
 # Agents to implement
     # Minimax agent
     # Kaggle agents
@@ -60,9 +63,9 @@ def get_heuristic(grid, mark, config):
     return score
 
 # Uses minimax to calculate value of dropping piece in selected column
-def score_move(grid, col, mark, config, nsteps):
+def score_move(grid, col, mark, config, nsteps, table):
     next_grid = drop_piece(grid, col, mark, config)
-    score = minimax(next_grid, nsteps-1, False, mark, config)
+    score = minimax(next_grid, nsteps-1, False, mark, config, -math.inf, math.inf, table)
     return score
 
 # Helper function for minimax: checks if agent or opponent has four in a row in the window
@@ -101,8 +104,23 @@ def is_terminal_node(grid, config):
                 return True
     return False
 
-# Minimax implementation
-def minimax(node, depth, maximizingPlayer, mark, config):
+# Minimax implementation with alpha beta pruning and transposition table
+def minimax(node, depth, maximizingPlayer, mark, config, alpha, beta, transposition_table):
+
+    # Check if node is in the table
+    if node.tobytes() in transposition_table:
+        #check if node is in correct depth
+        table = transposition_table[node.tobytes()]
+        if table['depth'] >= depth:
+            if(table['flag'] == 0):
+                return table['value']
+            elif(table['flag'] == -1):
+                alpha = max(alpha, table['value'])
+            elif(table['flag'] == 1):
+                beta = min(beta, table['value'])
+            if alpha >= beta:
+                return table['value']
+
     is_terminal = is_terminal_node(node, config)
     valid_moves = [c for c in range(config.columns) if node[0][c] == 0]
     if depth == 0 or is_terminal:
@@ -111,19 +129,38 @@ def minimax(node, depth, maximizingPlayer, mark, config):
         value = -np.Inf
         for col in valid_moves:
             child = drop_piece(node, col, mark, config)
-            value = max(value, minimax(child, depth-1, False, mark, config))
+            value = max(value, minimax(child, depth-1, False, mark, config,alpha, beta,transposition_table))
+            alpha = max(alpha,value)
+            if beta <= alpha:break;
+        # store in table
+        d = {'value':value, 'flag':0, 'depth':depth}
+        if value <= alpha:
+            d['flag'] = 1;
+        elif value <=beta:
+            d['flag'] = -1
+        transposition_table[node.tobytes()] = d;
+
         return value
     else:
         value = np.Inf
         for col in valid_moves:
             child = drop_piece(node, col, mark%2+1, config)
-            value = min(value, minimax(child, depth-1, True, mark, config))
+            value = min(value, minimax(child, depth-1, True, mark, config,alpha, beta,transposition_table))
+            beta = min(beta,value)
+            if beta <= alpha:break;
+        # store in table
+        d = {'value':value, 'flag':0,'depth':depth}
+        if value <= alpha:
+            d['flag'] = 1;
+        elif value <=beta:
+            d['flag'] = -1
+        transposition_table[node.tobytes()] = d;
+
         return value
 
 
 # How deep to make the game tree: higher values take longer to run!
 N_STEPS = 3
-
 def minMaxAgent(obs, config):
     # Get list of valid moves
     valid_moves = [c for c in range(config.columns) if obs.board[c] == 0]
@@ -135,3 +172,20 @@ def minMaxAgent(obs, config):
     max_cols = [key for key in scores.keys() if scores[key] == max(scores.values())]
     # Select at random from the maximizing columns
     return random.choice(max_cols)
+
+class Agents():
+    def __init__(self, *args, **kwargs):
+        self.transposition_table = dict()
+        return super().__init__(*args, **kwargs)
+    def minMaxAgent(self,obs, config):
+        # Get list of valid moves
+        valid_moves = [c for c in range(config.columns) if obs.board[c] == 0]
+        # Convert the board to a 2D grid
+        grid = np.asarray(obs.board).reshape(config.rows, config.columns)
+        # Use the heuristic to assign a score to each possible board in the next step
+        scores = dict(zip(valid_moves, [score_move(grid, col, obs.mark, config, N_STEPS, self.transposition_table) for col in valid_moves]))
+        # Get a list of columns (moves) that maximize the heuristic
+        max_cols = [key for key in scores.keys() if scores[key] == max(scores.values())]
+        # Select at random from the maximizing columns
+        return random.choice(max_cols)
+    

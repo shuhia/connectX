@@ -6,19 +6,20 @@ from kaggle_environments.envs.connectx import connectx as ctx
 
 import numpy as np
 
-
+rows = 6;
+cols = 7;
 
 class CustomEnvironment(Environment):
 
     def __init__(self, enemy_agent):
         super().__init__()
-        self.env = make("connectx", {'rows': 10, 'columns': 10, 'inarow': 5})
+        self.env = make("connectx", {'rows': rows, 'columns': cols, 'inarow': 4})
         self.trainer = self.env.train([None, enemy_agent])
         self.trainer.reset();
 
 
     def states(self):
-        return dict(type='int', shape=(10*10), num_values=3)
+        return dict(type='int', shape=(rows*cols), num_values=3)
 
     def actions(self):
         return dict(type='int', num_values=10)
