@@ -4,13 +4,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>070f8513-fd6d-479f-a51a-212ce08b2a03</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Kaggle_enviroments.py</StartupFile>
+    <StartupFile>kaggle_training.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>RL_learning</Name>
     <RootNamespace>RL_learning</RootNamespace>
+    <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -24,9 +25,12 @@
     <Compile Include="Agents.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Kaggle_enviroments.py" />
+    <Compile Include="kaggle_training.py" />
     <Compile Include="RL_learning.py" />
-    <Compile Include="tensorforce_test.py" />
+    <Compile Include="strategy.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tensorforce_training.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />

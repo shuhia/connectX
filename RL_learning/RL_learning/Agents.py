@@ -14,7 +14,7 @@ import random
 # Helper function for get_heuristic: checks if window satisfies heuristic conditions
 def check_window(window, num_discs, piece, config):
     return (window.count(piece) == num_discs and window.count(0) == config.inarow-num_discs)
-    
+
 # Helper function for get_heuristic: counts number of windows satisfying specified heuristic conditions
 def count_windows(grid, num_discs, piece, config):
     num_windows = 0
@@ -53,7 +53,6 @@ def drop_piece(grid, col, mark, config):
     next_grid[row][col] = mark
     return next_grid
 
-
 def get_heuristic(grid, mark, config):
     num_threes = count_windows(grid, 3, mark, config)
     num_fours = count_windows(grid, 4, mark, config)
@@ -62,10 +61,12 @@ def get_heuristic(grid, mark, config):
     score = num_threes - 1e2*num_threes_opp - 1e4*num_fours_opp + 1e6*num_fours
     return score
 
-# Uses minimax to calculate value of dropping piece in selected column
-def score_move(grid, col, mark, config, nsteps, table):
+def score_move2(grid, col, mark, config, nsteps):
+    # Gets the next grid for the move
     next_grid = drop_piece(grid, col, mark, config)
-    score = minimax(next_grid, nsteps-1, False, mark, config, -math.inf, math.inf, table)
+    # Check if there are any winning moves
+    score = negamax(next_grid, nsteps-1, mark, 1, config, -math.inf, math.inf)
+
     return score
 
 # Helper function for minimax: checks if agent or opponent has four in a row in the window
@@ -103,87 +104,75 @@ def is_terminal_node(grid, config):
             if is_terminal_window(window, config):
                 return True
     return False
+tables = dict()
+def negamax(node, depth, mark, color, config, alpha, beta):
+            # Check if node is in the table
+        
+        if node.tobytes() in tables:
+            table = tables[node.tobytes()]
+            #check if node is in correct depth
+            if table['depth'] >= depth:
+                if(table['flag'] == 0):
+                    return table['value']
+                elif(table['flag'] == -1):
+                    alpha = max(alpha, table['value'])
+                elif(table['flag'] == 1):
+                    beta = min(beta, table['value'])
+                if alpha >= beta:
+                    return table['value']
+        # Get all the valid moves
+        valid_moves = [c for c in range(config.columns) if node[0][c] == 0]
+        
+        # If it is the last node
+        if (depth == 0 or is_terminal_node(node, config)):
+            #Color changes the sign of value
+                return get_heuristic(node, mark, config)*color
+        value = -10000;
 
-# Minimax implementation with alpha beta pruning and transposition table
-def minimax(node, depth, maximizingPlayer, mark, config, alpha, beta, transposition_table):
+        for move in valid_moves:
+            # Returns the state after executing a move
+            
+            child = drop_piece(node, move, mark, config)
 
-    # Check if node is in the table
-    if node.tobytes() in transposition_table:
-        #check if node is in correct depth
-        table = transposition_table[node.tobytes()]
-        if table['depth'] >= depth:
-            if(table['flag'] == 0):
-                return table['value']
-            elif(table['flag'] == -1):
-                alpha = max(alpha, table['value'])
-            elif(table['flag'] == 1):
-                beta = min(beta, table['value'])
-            if alpha >= beta:
-                return table['value']
+            value = max(value, -negamax(child, depth - 1, mark, -color, config, -beta, -alpha))
+            
+            a = max(alpha,value)
 
-    is_terminal = is_terminal_node(node, config)
-    valid_moves = [c for c in range(config.columns) if node[0][c] == 0]
-    if depth == 0 or is_terminal:
-        return get_heuristic(node, mark, config)
-    if maximizingPlayer:
-        value = -np.Inf
-        for col in valid_moves:
-            child = drop_piece(node, col, mark, config)
-            value = max(value, minimax(child, depth-1, False, mark, config,alpha, beta,transposition_table))
-            alpha = max(alpha,value)
-            if beta <= alpha:break;
-        # store in table
+            if a >= beta:
+                break
+        
         d = {'value':value, 'flag':0, 'depth':depth}
         if value <= alpha:
             d['flag'] = 1;
         elif value <=beta:
             d['flag'] = -1
-        transposition_table[node.tobytes()] = d;
-
-        return value
-    else:
-        value = np.Inf
-        for col in valid_moves:
-            child = drop_piece(node, col, mark%2+1, config)
-            value = min(value, minimax(child, depth-1, True, mark, config,alpha, beta,transposition_table))
-            beta = min(beta,value)
-            if beta <= alpha:break;
-        # store in table
-        d = {'value':value, 'flag':0,'depth':depth}
-        if value <= alpha:
-            d['flag'] = 1;
-        elif value <=beta:
-            d['flag'] = -1
-        transposition_table[node.tobytes()] = d;
-
-        return value
-
-
-# How deep to make the game tree: higher values take longer to run!
-N_STEPS = 3
-def minMaxAgent(obs, config):
-    # Get list of valid moves
-    valid_moves = [c for c in range(config.columns) if obs.board[c] == 0]
-    # Convert the board to a 2D grid
-    grid = np.asarray(obs.board).reshape(config.rows, config.columns)
-    # Use the heuristic to assign a score to each possible board in the next step
-    scores = dict(zip(valid_moves, [score_move(grid, col, obs.mark, config, N_STEPS) for col in valid_moves]))
-    # Get a list of columns (moves) that maximize the heuristic
-    max_cols = [key for key in scores.keys() if scores[key] == max(scores.values())]
-    # Select at random from the maximizing columns
-    return random.choice(max_cols)
-
-class Agents():
+        tables[node.tobytes()] = d
+        
+        return value;
+# This agent random chooses a non-empty column.
+    
+class Agent_negamax():
     def __init__(self, *args, **kwargs):
         self.transposition_table = dict()
         return super().__init__(*args, **kwargs)
-    def minMaxAgent(self,obs, config):
+
+    def negamaxAgent(self, obs, config):
+        N_STEPS = 3
         # Get list of valid moves
+        player = obs.mark;
         valid_moves = [c for c in range(config.columns) if obs.board[c] == 0]
+       
         # Convert the board to a 2D grid
         grid = np.asarray(obs.board).reshape(config.rows, config.columns)
+        # If first player then place the piece in the middle
+        if(max(obs.board)==0): return 3
+        for col in valid_moves:
+            if count_windows(drop_piece(grid, col, obs.mark, config), 4, obs.mark, config) > 0:
+                return col
+            if(count_windows(drop_piece(grid, col, obs.mark%2+1, config),4,obs.mark%2+1,config) > 0):
+                return col
         # Use the heuristic to assign a score to each possible board in the next step
-        scores = dict(zip(valid_moves, [score_move(grid, col, obs.mark, config, N_STEPS, self.transposition_table) for col in valid_moves]))
+        scores = dict(zip(valid_moves, [score_move2(grid, col, obs.mark, config, N_STEPS) for col in valid_moves]))
         # Get a list of columns (moves) that maximize the heuristic
         max_cols = [key for key in scores.keys() if scores[key] == max(scores.values())]
         # Select at random from the maximizing columns

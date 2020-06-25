@@ -54,7 +54,7 @@ class CustomEnvironment(Environment):
         return next_state, terminal, reward
 
 from tensorforce.agents import Agent
-
+from Agents import Agents
 env1 = CustomEnvironment('random');
 env2 = CustomEnvironment('negamax');
 
@@ -80,7 +80,7 @@ runner2 = Runner(
 
 runner1.run(num_episodes=2000, mean_horizon = 100)
 runner2.run(num_episodes=200, mean_horizon = 10)
-runner2.run(num_episodes=100, evaluation=True, mean_horizon = 100)
+runner2.run(num_episodes=10, evaluation=True, mean_horizon = 100)
 agent.save();
 runner1.close()
 runner2.close();
